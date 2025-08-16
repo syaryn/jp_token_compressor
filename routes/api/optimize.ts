@@ -21,6 +21,27 @@ async function loadSynonymDict(): Promise<void> {
   if (isLoaded) return;
 
   try {
+    // まず事前構築された辞書ファイルを試す
+    try {
+      console.log("📚 事前構築された辞書データを読み込み中...");
+      const prebuiltResponse = await fetch("/synonym-dict.json");
+      if (prebuiltResponse.ok) {
+        const prebuiltData = await prebuiltResponse.json();
+        Object.assign(synonymMap, prebuiltData);
+        isLoaded = true;
+        console.log(
+          `✅ 事前構築辞書から ${
+            Object.keys(synonymMap).length
+          } 個のマッピングを高速読み込み`,
+        );
+        return;
+      }
+    } catch (_prebuiltError) {
+      console.log("⚠️ 事前構築辞書が見つからないため、リアルタイム構築を実行");
+    }
+
+    // フォールバック: リアルタイムでダウンロード・構築
+    console.log("📥 Sudachi辞書をリアルタイムダウンロード中...");
     const response = await fetch(
       "https://raw.githubusercontent.com/WorksApplications/SudachiDict/refs/heads/develop/src/main/text/synonyms.txt",
     );
