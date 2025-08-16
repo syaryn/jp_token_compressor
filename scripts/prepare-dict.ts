@@ -19,6 +19,41 @@ function getTokenCount(text: string): number {
   return encoder.encode(text).length;
 }
 
+// 日本語文字かどうかを判定
+function isJapanese(text: string): boolean {
+  return /^[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\u3400-\u4DBF]+$/.test(text);
+}
+
+// 英語（アルファベット）かどうかを判定
+function isAlphabet(text: string): boolean {
+  return /^[a-zA-Z]+$/.test(text);
+}
+
+// 最適化が有効かどうかを判定
+function shouldOptimize(original: string, optimized: string): boolean {
+  // 英語への変換は禁止
+  if (isJapanese(original) && isAlphabet(optimized)) {
+    return false;
+  }
+
+  // アルファベットから日本語への変換も禁止
+  if (isAlphabet(original) && isJapanese(optimized)) {
+    return false;
+  }
+
+  const originalTokens = getTokenCount(original);
+  const optimizedTokens = getTokenCount(optimized);
+
+  // トークン数が減らない場合は変換しない
+  if (optimizedTokens >= originalTokens) {
+    return false;
+  }
+
+  // 十分なトークン削減効果がある場合のみ変換（20%以上削減）
+  const reductionRate = (originalTokens - optimizedTokens) / originalTokens;
+  return reductionRate >= 0.2;
+}
+
 async function downloadAndBuildSynonymDict(): Promise<SynonymMap> {
   console.log("📥 Sudachi同義語辞書をダウンロード中...");
 
@@ -78,10 +113,7 @@ async function downloadAndBuildSynonymDict(): Promise<SynonymMap> {
 
         // グループ内の他の単語を最効率単語にマッピング
         for (const word of words) {
-          if (
-            word !== mostEfficient &&
-            getTokenCount(word) > getTokenCount(mostEfficient)
-          ) {
+          if (word !== mostEfficient && shouldOptimize(word, mostEfficient)) {
             synonymMap[word] = mostEfficient;
           }
         }

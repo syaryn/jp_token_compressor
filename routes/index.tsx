@@ -9,8 +9,11 @@ export default function Home() {
             日本語トークン効率最適化ツール
           </h1>
           <p class="text-lg text-gray-600">
-            Sudachi同義語辞書を使用して、より効率的な日本語表現に変換します
+            Sudachi同義語辞書を使用して、読みやすさを保ちながら日本語表現を最適化します
           </p>
+          <div class="mt-4 text-sm text-gray-500">
+            ✅ 日本語のみ最適化 ✅ 20%以上の効率改善のみ適用 ✅ 可読性を重視
+          </div>
         </div>
 
         <div class="grid md:grid-cols-2 gap-6">
