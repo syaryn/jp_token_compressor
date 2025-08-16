@@ -49,15 +49,17 @@ function shouldOptimize(original: string, optimized: string): boolean {
     return false;
   }
 
-  // 十分なトークン削減効果がある場合のみ変換（20%以上削減）
-  const reductionRate = (originalTokens - optimizedTokens) / originalTokens;
-  return reductionRate >= 0.2;
+  // 任意のトークン削減効果がある場合に変換
+  return true;
 }
 
-async function downloadAndBuildSynonymDict(): Promise<SynonymMap> {
+async function downloadAndBuildSynonymDict(): Promise<
+  { synonymMap: SynonymMap; dictionaryWords: string[] }
+> {
   console.log("📥 Sudachi同義語辞書をダウンロード中...");
 
   const synonymMap: SynonymMap = {};
+  const dictionaryWords = new Set<string>();
 
   try {
     const response = await fetch(
@@ -71,8 +73,10 @@ async function downloadAndBuildSynonymDict(): Promise<SynonymMap> {
     const text = await response.text();
     console.log(`📄 辞書データサイズ: ${Math.round(text.length / 1024)}KB`);
 
-    // 同義語グループをIDで管理
-    const synonymGroups: { [id: string]: string[] } = {};
+    // 同義語グループをIDで管理（展開制御フラグも記録）
+    const synonymGroups: {
+      [id: string]: Array<{ word: string; expansionFlag: string }>;
+    } = {};
 
     const lines = text.split("\n");
     console.log("🔍 辞書データを解析中...");
@@ -82,6 +86,7 @@ async function downloadAndBuildSynonymDict(): Promise<SynonymMap> {
         const parts = line.split(",");
         if (parts.length >= 9) {
           const groupId = parts[0]; // 同義語グループのID
+          const expansionFlag = parts[2] || "0"; // 展開制御フラグ（省略時は0）
           const word = parts[8]; // 単語（9番目の要素）
 
           if (word && word.trim()) {
@@ -89,7 +94,12 @@ async function downloadAndBuildSynonymDict(): Promise<SynonymMap> {
             if (!synonymGroups[groupId]) {
               synonymGroups[groupId] = [];
             }
-            synonymGroups[groupId].push(cleanWord);
+            synonymGroups[groupId].push({
+              word: cleanWord,
+              expansionFlag: expansionFlag,
+            });
+            // 辞書に存在する全ての単語を記録
+            dictionaryWords.add(cleanWord);
           }
         }
       }
@@ -98,23 +108,48 @@ async function downloadAndBuildSynonymDict(): Promise<SynonymMap> {
     console.log("⚡ トークン効率最適化マッピングを構築中...");
 
     // 各グループで最もトークン効率の良い単語を見つけて、他の単語をマッピング
-    for (const words of Object.values(synonymGroups)) {
-      if (words.length > 1) {
-        // 実際のトークン数で最も効率的な単語を選択
-        const mostEfficient = words.reduce((a, b) => {
-          const tokensA = getTokenCount(a);
-          const tokensB = getTokenCount(b);
+    for (const wordEntries of Object.values(synonymGroups)) {
+      if (wordEntries.length > 1) {
+        // 変換先として使用可能な単語のみを対象（フラグ=2は除外）
+        const validTargets = wordEntries.filter((entry) =>
+          entry.expansionFlag !== "2"
+        );
+
+        if (validTargets.length === 0) continue; // 有効な変換先がない場合はスキップ
+
+        // 実際のトークン数で最も効率的な単語を選択（日本語を優先）
+        const mostEfficient = validTargets.reduce((a, b) => {
+          const tokensA = getTokenCount(a.word);
+          const tokensB = getTokenCount(b.word);
+          const isJapaneseA = isJapanese(a.word);
+          const isJapaneseB = isJapanese(b.word);
+
+          // 日本語を優先: 両方が日本語または両方が非日本語の場合のみトークン数で比較
+          if (isJapaneseA && !isJapaneseB) return a; // aが日本語、bが非日本語
+          if (!isJapaneseA && isJapaneseB) return b; // aが非日本語、bが日本語
+
           // トークン数が少ない方を選択、同じ場合は文字数が少ない方
           return tokensA < tokensB ||
-              (tokensA === tokensB && a.length < b.length)
+              (tokensA === tokensB && a.word.length < b.word.length)
             ? a
             : b;
         });
 
         // グループ内の他の単語を最効率単語にマッピング
-        for (const word of words) {
-          if (word !== mostEfficient && shouldOptimize(word, mostEfficient)) {
-            synonymMap[word] = mostEfficient;
+        // ただし、展開制御フラグが0（常に展開）の単語のみを変換元として許可
+        for (const wordEntry of wordEntries) {
+          const { word, expansionFlag } = wordEntry;
+
+          // 展開制御フラグをチェック
+          // 0: 常に展開に使用する（変換元として許可）
+          // 1: 自分自身が展開のトリガーとはならない（変換元として不許可）
+          // 2: 常に展開に使用しない（変換元として不許可）
+          if (
+            word !== mostEfficient.word &&
+            expansionFlag === "0" &&
+            shouldOptimize(word, mostEfficient.word)
+          ) {
+            synonymMap[word] = mostEfficient.word;
           }
         }
       }
@@ -124,8 +159,9 @@ async function downloadAndBuildSynonymDict(): Promise<SynonymMap> {
       `✅ 完了: ${Object.keys(synonymMap).length}個の同義語マッピングを構築`,
     );
     console.log(`📊 ${Object.keys(synonymGroups).length}グループから処理`);
+    console.log(`📖 ${dictionaryWords.size}個の辞書単語を記録`);
 
-    return synonymMap;
+    return { synonymMap, dictionaryWords: Array.from(dictionaryWords) };
   } catch (error) {
     console.error("❌ 辞書のダウンロード・構築に失敗:", error);
     throw error;
@@ -133,13 +169,15 @@ async function downloadAndBuildSynonymDict(): Promise<SynonymMap> {
 }
 
 // 辞書データをJSONファイルとして保存
-async function saveSynonymDict(synonymMap: SynonymMap): Promise<void> {
+async function saveSynonymDict(
+  data: { synonymMap: SynonymMap; dictionaryWords: string[] },
+): Promise<void> {
   const outputPath = "./static/synonym-dict.json";
 
   console.log(`💾 辞書データを保存中: ${outputPath}`);
 
   try {
-    await Deno.writeTextFile(outputPath, JSON.stringify(synonymMap));
+    await Deno.writeTextFile(outputPath, JSON.stringify(data));
 
     const stats = await Deno.stat(outputPath);
     console.log(`✅ 保存完了: ${Math.round(stats.size / 1024)}KB`);
@@ -154,8 +192,8 @@ if (import.meta.main) {
   console.log("🚀 Sudachi同義語辞書の事前構築を開始");
 
   try {
-    const synonymMap = await downloadAndBuildSynonymDict();
-    await saveSynonymDict(synonymMap);
+    const dictData = await downloadAndBuildSynonymDict();
+    await saveSynonymDict(dictData);
 
     console.log("🎉 辞書の事前構築が完了しました！");
     console.log("📈 これにより初回実行時の待機時間が大幅に短縮されます");
