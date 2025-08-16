@@ -1,0 +1,22 @@
+# Lefthook configuration for Deno Fresh project
+# Refer to: https://lefthook.dev/configuration/
+
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: "*.{ts,tsx,js,jsx}"
+      run: deno lint {staged_files}
+      stage_fixed: true
+    format:
+      glob: "*.{ts,tsx,js,jsx,json,md}"
+      run: deno fmt {staged_files}
+      stage_fixed: true
+    type-check:
+      glob: "*.{ts,tsx}"
+      run: deno check --allow-import {staged_files}
+
+pre-push:
+  commands:
+    check-all:
+      run: deno task check
