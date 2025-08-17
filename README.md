@@ -1,7 +1,7 @@
 # 日本語トークン効率最適化ツール
 
-**Deno +
-Fresh**を使用した、日本語文章のトークン効率を最適化するWebアプリケーションです。
+**Deno + Fresh + Deno
+KV**を使用した、日本語文章のトークン効率を最適化するWebアプリケーションです。
 
 ## 🎯 概要
 
@@ -14,6 +14,8 @@ Fresh**を使用した、日本語文章のトークン効率を最適化するW
 - 📊 **トークン数の比較表示**
 - 📋 **最適化結果のワンクリックコピー**
 - 📱 **レスポンシブ対応UI**
+- 🗄️ **高速KVストレージによる辞書管理**
+- 🕐 **毎日自動辞書更新（Deno Cron）**
 
 ## 🛠️ 技術仕様
 
@@ -21,6 +23,10 @@ Fresh**を使用した、日本語文章のトークン効率を最適化するW
 
 - **[Deno](https://deno.dev/)** - モダンなJavaScript/TypeScriptランタイム
 - **[Fresh](https://fresh.deno.dev/)** - Denoベースの高速Webフレームワーク
+- **[Deno KV](https://deno.land/manual/runtime/kv)** -
+  高性能なKey-Valueストレージ
+- **[Deno Cron](https://docs.deno.com/deploy/kv/manual/cron/)** -
+  スケジュールタスク実行
 - **[Preact](https://preactjs.com/)** - 軽量なReactライク
 - **[TailwindCSS](https://tailwindcss.com/)** - ユーティリティファーストCSS
 
@@ -28,7 +34,7 @@ Fresh**を使用した、日本語文章のトークン効率を最適化するW
 
 - **[wakachigaki](https://github.com/yuhsak/wakachigaki)** - 日本語形態素解析
 - **[Sudachi同義語辞書](https://github.com/WorksApplications/SudachiDict)** -
-  35,178個の同義語マッピング
+  15,085個の同義語マッピング + 64,747個の辞書単語
 - **[js-tiktoken](https://www.npmjs.com/package/js-tiktoken)** -
   GPT-4o互換トークン数計測(o200k_base)
 
@@ -46,6 +52,9 @@ Fresh**を使用した、日本語文章のトークン効率を最適化するW
 git clone <repository-url>
 cd jp_token_compressor
 
+# KV辞書を初期化（初回のみ）
+deno run -A --unstable-kv scripts/init-kv-dict.ts
+
 # 開発サーバーを起動
 deno task start
 ```
@@ -59,13 +68,36 @@ deno task start
 3. **結果確認**: 右側に最適化された文章とトークン数の比較が表示
 4. **コピー**: 「コピー」ボタンで最適化結果をクリップボードにコピー
 
-### ⚠️ 初回実行について
+### ⚡ パフォーマンス
 
-**初回の最適化実行時は10-20秒程度時間がかかります**
+**Deno KVによる高速辞書アクセス**
 
-- Sudachi同義語辞書（1.5MB）のダウンロードと解析
-- 35,178個の同義語マッピング構築
-- 2回目以降は高速で動作します
+- KVストレージによる瞬時の辞書検索
+- メモリ効率的な設計
+- 常に最新の辞書データ（毎日自動更新）
+
+### 🕐 自動辞書更新システム
+
+**Deno Cronによる完全自動化**
+
+このアプリケーションは、**Deno
+Cron**を使用して辞書データを完全自動で最新に保ちます：
+
+- **スケジュール**: 毎日深夜2:00 AM（JST）に実行
+- **更新判定**: 前回更新から24時間以上経過時のみ実行
+- **自動処理**: 最新のSudachi辞書をダウンロード・解析・KVに保存
+- **ログ出力**: 更新状況とパフォーマンス統計を詳細ログ
+- **エラー処理**: 更新失敗時の適切なエラーハンドリング
+
+```typescript
+// cron.ts - 毎日自動実行される辞書更新
+// JST深夜2:00 AM = UTC 17:00 (前日)
+Deno.cron("Update Sudachi Dictionary", "0 17 * * *", async () => {
+  await updateDictionary();
+});
+```
+
+これにより、ユーザーは常に最新の同義語データでトークン最適化を利用できます。
 
 ### 便利な機能
 
@@ -81,10 +113,10 @@ deno task start
 # 開発サーバー起動（ホットリロード）
 deno task start
 
-# 同義語辞書の事前構築（デプロイ時自動実行）
-deno task prepare-dict
+# KV辞書の初期化・再構築
+deno run -A --unstable-kv scripts/init-kv-dict.ts
 
-# 本番ビルド（辞書事前構築 + ビルド）
+# 本番ビルド
 deno task build
 
 # 本番サーバー起動
@@ -97,18 +129,34 @@ deno task check
 ### 🚀 デプロイ（Deno Deploy）
 
 ```bash
-# 1. 辞書事前構築 + ビルド
+# 1. 本番ビルド
 deno task build
 
 # 2. Deno Deployへデプロイ
 deployctl deploy --project=your-project main.ts
+
+# 3. デプロイ後にKV辞書を初期化
+# Deno Deploy上で以下のスクリプトを実行
+deno run -A --unstable-kv scripts/init-kv-dict.ts
 ```
 
-**✨ デプロイ時の最適化機能:**
+**✨ Deno KVによる本番環境の利点:**
 
-- 事前構築された同義語辞書（1.1MB）が `/synonym-dict.json` として配信
-- 初回実行時の待機時間を **10-20秒 → 1秒未満** に大幅短縮
-- フォールバック機能で事前構築失敗時も正常動作
+- **高性能**: KVストレージによる瞬時の辞書アクセス
+- **自動更新**: Deno Cronによる毎日深夜2時（JST）の自動辞書更新
+- **メンテナンス不要**: 辞書の更新・管理が完全自動化
+- **スケーラビリティ**: Deno Deployの自動スケーリング対応
+- **データ永続化**: クラウドベースの永続化ストレージ
+
+**🤖 Deno Cronによる自動メンテナンス:**
+
+```typescript
+// 本番環境で自動実行される処理
+- 毎日2:00 AM JST: 辞書更新チェック・実行
+- 更新判定: 24時間以上経過時のみ実行
+- 自動ログ: 更新状況の詳細記録
+- エラー回復: 失敗時の適切なエラーハンドリング
+```
 
 ### コード品質管理
 
@@ -133,15 +181,16 @@ commit時に自動的に以下を実行します：
 
 ```
 入力:  「コンピュータとアルゴリズムを活用したデータベースシステム」(21トークン)
-出力:  「コンピュータとアルゴリズムを使用したデータベースシステム」(20トークン)  
-効果:  約5%のトークン削減（活用→使用）
+出力:  「電算機とアルゴリズムを使用したデータベースシステム」(19トークン)  
+効果:  約10%のトークン削減（コンピュータ→電算機、活用→使用）
 ```
 
 ### 🔒 最適化ポリシー
 
 - **日本語のみ**: 英語への変換は行わず、可読性を重視
-- **効果的な変換**: 20%以上のトークン削減が見込める場合のみ変換
-- **品質重視**: 18,228個の厳選されたマッピングを使用
+- **全ての削減効果**: トークン削減効果のある変換をすべて適用
+- **品質重視**: 15,085個の厳選されたマッピングを使用
+- **複合語対応**: 部分マッチによる複合語内最適化
 
 ## 📁 プロジェクト構成
 
@@ -155,7 +204,12 @@ jp_token_compressor/
 │   └── _404.tsx             # 404ページ
 ├── islands/
 │   └── TextOptimizer.tsx    # クライアントサイド処理
+├── scripts/
+│   └── init-kv-dict.ts      # KV辞書初期化スクリプト
+├── utils/
+│   └── kv.ts               # KVストレージユーティリティ
 ├── static/                  # 静的ファイル
+├── cron.ts                 # Deno Cron定義（毎日辞書更新）
 ├── deno.json               # Denoプロジェクト設定
 ├── lefthook.yml            # Git hooks設定
 └── fresh.config.ts         # Fresh設定
@@ -165,6 +219,8 @@ jp_token_compressor/
 
 - [Deno公式ドキュメント](https://docs.deno.com/)
 - [Fresh公式ドキュメント](https://fresh.deno.dev/docs)
+- [Deno KVドキュメント](https://deno.land/manual/runtime/kv)
+- [Deno Cronドキュメント](https://docs.deno.com/deploy/kv/manual/cron/)
 - [Sudachi辞書プロジェクト](https://github.com/WorksApplications/SudachiDict)
 - [wakachigaki](https://github.com/yuhsak/wakachigaki)
 

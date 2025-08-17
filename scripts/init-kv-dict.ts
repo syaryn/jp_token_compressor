@@ -1,11 +1,17 @@
 #!/usr/bin/env -S deno run -A
 
 /**
- * Sudachi同義語辞書の事前ダウンロード・構築スクリプト
- * デプロイ時に実行して辞書データを準備する
+ * Sudachi同義語辞書のKV初期化スクリプト
+ * KVストレージへの辞書データ初期設定・再構築
  */
 
 import { getEncoding } from "js-tiktoken";
+import {
+  clearKvDictionary,
+  getKvStats,
+  isDictionaryInitialized,
+  saveSynonymsBatch,
+} from "../utils/kv.ts";
 
 interface SynonymMap {
   [key: string]: string;
@@ -168,37 +174,57 @@ async function downloadAndBuildSynonymDict(): Promise<
   }
 }
 
-// 辞書データをJSONファイルとして保存
-async function saveSynonymDict(
-  data: { synonymMap: SynonymMap; dictionaryWords: string[] },
-): Promise<void> {
-  const outputPath = "./static/synonym-dict.json";
-
-  console.log(`💾 辞書データを保存中: ${outputPath}`);
+// メイン処理
+async function main() {
+  console.log("🚀 Sudachi同義語辞書のKV初期化を開始");
 
   try {
-    await Deno.writeTextFile(outputPath, JSON.stringify(data));
+    // 既存の辞書状況をチェック
+    const isInitialized = await isDictionaryInitialized();
+    if (isInitialized) {
+      const stats = await getKvStats();
+      console.log("📊 既存のKV辞書が見つかりました:");
+      console.log(`   同義語: ${stats.synonymCount}個`);
+      console.log(`   辞書単語: ${stats.dictionaryWordCount}個`);
+      console.log(`   最終更新: ${stats.lastUpdated}`);
 
-    const stats = await Deno.stat(outputPath);
-    console.log(`✅ 保存完了: ${Math.round(stats.size / 1024)}KB`);
+      const shouldOverwrite = confirm("既存の辞書を上書きしますか？");
+      if (!shouldOverwrite) {
+        console.log("⏹️ 初期化処理をキャンセルしました");
+        return;
+      }
+
+      console.log("🗑️ 既存のKV辞書をクリア中...");
+      await clearKvDictionary();
+    }
+
+    // 辞書データをダウンロード・構築
+    const { synonymMap, dictionaryWords } = await downloadAndBuildSynonymDict();
+
+    // KVストレージに保存
+    console.log("💾 Deno KVにデータを保存中...");
+    await saveSynonymsBatch(synonymMap, dictionaryWords);
+
+    // 保存結果を確認
+    const finalStats = await getKvStats();
+    console.log("🎉 KV辞書の初期化が完了しました！");
+    console.log(`📈 保存されたデータ:`);
+    console.log(`   同義語マッピング: ${finalStats.synonymCount}個`);
+    console.log(`   辞書単語: ${finalStats.dictionaryWordCount}個`);
+    console.log(`📅 最終更新: ${finalStats.lastUpdated}`);
+
+    console.log("\n✨ これで以下の利点が得られます:");
+    console.log("  - 高速な辞書検索（KVの高性能）");
+    console.log("  - メモリ使用量の削減");
+    console.log("  - Deno Deployでの自動スケーリング");
+    console.log("  - データの永続化保証");
   } catch (error) {
-    console.error("❌ 辞書データの保存に失敗:", error);
-    throw error;
+    console.error("💥 初期化処理に失敗しました:", error);
+    Deno.exit(1);
   }
 }
 
-// メイン処理
+// スクリプト実行時のメイン処理
 if (import.meta.main) {
-  console.log("🚀 Sudachi同義語辞書の事前構築を開始");
-
-  try {
-    const dictData = await downloadAndBuildSynonymDict();
-    await saveSynonymDict(dictData);
-
-    console.log("🎉 辞書の事前構築が完了しました！");
-    console.log("📈 これにより初回実行時の待機時間が大幅に短縮されます");
-  } catch (error) {
-    console.error("💥 処理に失敗しました:", error);
-    Deno.exit(1);
-  }
+  await main();
 }
