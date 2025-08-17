@@ -140,8 +140,10 @@ export async function saveSynonymsBatch(
  * 辞書が初期化済みかチェックする
  */
 export async function isDictionaryInitialized(): Promise<boolean> {
-  const metadata = await getDictionaryMetadata();
-  return metadata !== null && metadata.synonymCount > 0;
+  const kv = await getKvInstance();
+  // リモート初期化スクリプトと互換性のあるキーをチェック
+  const result = await kv.get(["dictionary", "initialized"]);
+  return result.value === true;
 }
 
 /**
@@ -154,7 +156,26 @@ export async function getKvStats(): Promise<{
 }> {
   const kv = await getKvInstance();
 
-  // メタデータから取得を試行
+  // リモート初期化スクリプトと互換性のあるキーから統計情報を取得
+  const wordCountResult = await kv.get(["dictionary", "word_count"]);
+  const lastUpdatedResult = await kv.get(["dictionary", "last_updated"]);
+
+  if (wordCountResult.value) {
+    // 同義語数を実際にカウント
+    let synonymCount = 0;
+    const synonymsIter = kv.list({ prefix: ["synonyms"] });
+    for await (const _entry of synonymsIter) {
+      synonymCount++;
+    }
+
+    return {
+      synonymCount,
+      dictionaryWordCount: wordCountResult.value as number,
+      lastUpdated: lastUpdatedResult.value as string,
+    };
+  }
+
+  // フォールバック: メタデータから取得を試行
   const metadata = await getDictionaryMetadata();
   if (metadata) {
     return {
@@ -164,7 +185,7 @@ export async function getKvStats(): Promise<{
     };
   }
 
-  // フォールバック: 実際にカウント（重い処理）
+  // 最終フォールバック: 実際にカウント（重い処理）
   let synonymCount = 0;
   let dictionaryWordCount = 0;
 
