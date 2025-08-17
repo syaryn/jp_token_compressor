@@ -128,78 +128,78 @@ export default function Home() {
         <div class="mt-16 bg-white rounded-lg shadow-lg p-8">
           <div class="max-w-4xl mx-auto">
             <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">
-              どうやってトークン数を減らしているの？
+              トークン最適化の仕組み
             </h2>
 
             <div class="grid md:grid-cols-2 gap-8 mb-8">
               <div>
                 <h3 class="text-xl font-semibold text-gray-800 mb-3">
-                  💰 ChatGPTのお金、節約できます！
+                  💰 AIサービスのコスト削減
                 </h3>
                 <p class="text-gray-600 leading-relaxed mb-4">
-                  ChatGPTやClaude、Geminiって使うたびにお金がかかりますよね。実は<strong>
-                    文字数じゃなくて「トークン数」
-                  </strong>で料金が決まるんです。このツールを使うと同じ意味のまま、もっと安く使えるようになります！
+                  ChatGPT、Claude、GeminiなどのAIサービスは<strong>
+                    トークン数に応じて課金
+                  </strong>されます。このツールは同じ意味を保ちながらトークン数を削減し、API利用コストを効果的に削減します。
                 </p>
                 <ul class="text-sm text-gray-600 space-y-1">
-                  <li>• 平均10-20%お得になります</li>
-                  <li>• 意味や読みやすさはそのまま</li>
-                  <li>• 長い文章ほど効果大</li>
+                  <li>• 数%のコスト削減効果</li>
+                  <li>• 意味・可読性を完全保持</li>
+                  <li>• 短文で高い効果、長文では控えめな効果</li>
                 </ul>
               </div>
 
               <div>
                 <h3 class="text-xl font-semibold text-gray-800 mb-3">
-                  📚 すごい日本語辞書を使ってます
+                  📚 Sudachi同義語辞書の活用
                 </h3>
                 <p class="text-gray-600 leading-relaxed mb-4">
-                  「Sudachi同義語辞書」という、日本語のプロが作った辞書を使っています。<strong>
-                    64,747個の単語
+                  WorksApplications社開発の高精度な「Sudachi同義語辞書」を採用。<strong>
+                    64,747個の辞書単語
                   </strong>と<strong>
-                    15,085個の言い換え
-                  </strong>が入っていて、毎日最新版に更新されています。
+                    15,085個の同義語マッピング
+                  </strong>により、日本語に特化した最適化を実現します。
                 </p>
                 <ul class="text-sm text-gray-600 space-y-1">
-                  <li>• プロ品質の日本語処理</li>
-                  <li>• 毎日自動で最新版に更新</li>
-                  <li>• 日本語に特化した最適化</li>
+                  <li>• 企業レベルの日本語処理精度</li>
+                  <li>• 毎日自動辞書更新</li>
+                  <li>• 形態素解析ベースの高精度変換</li>
                 </ul>
               </div>
             </div>
 
             <div class="border-t pt-8">
               <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">
-                こんな感じで最適化してます
+                最適化処理フロー
               </h3>
               <div class="grid md:grid-cols-4 gap-4 text-center">
                 <div class="p-4 bg-blue-50 rounded-lg">
                   <div class="text-2xl font-bold text-blue-600 mb-2">1</div>
-                  <h4 class="font-medium text-gray-800 mb-2">文章を分解</h4>
+                  <h4 class="font-medium text-gray-800 mb-2">形態素解析</h4>
                   <p class="text-sm text-gray-600">
-                    日本語を単語ごとに分けます
+                    wakachigakiで日本語文章を単語単位に分割
                   </p>
                 </div>
                 <div class="p-4 bg-green-50 rounded-lg">
                   <div class="text-2xl font-bold text-green-600 mb-2">2</div>
-                  <h4 class="font-medium text-gray-800 mb-2">言い換え探し</h4>
+                  <h4 class="font-medium text-gray-800 mb-2">同義語検索</h4>
                   <p class="text-sm text-gray-600">
-                    辞書から同じ意味の別の言葉を探します
+                    Sudachi辞書から同義語候補を取得
                   </p>
                 </div>
                 <div class="p-4 bg-yellow-50 rounded-lg">
                   <div class="text-2xl font-bold text-yellow-600 mb-2">3</div>
-                  <h4 class="font-medium text-gray-800 mb-2">お得度チェック</h4>
+                  <h4 class="font-medium text-gray-800 mb-2">トークン計測</h4>
                   <p class="text-sm text-gray-600">
-                    どっちがトークン数少ないか計算
+                    js-tiktokenでGPT-4o互換トークン数を計測
                   </p>
                 </div>
                 <div class="p-4 bg-purple-50 rounded-lg">
                   <div class="text-2xl font-bold text-purple-600 mb-2">4</div>
                   <h4 class="font-medium text-gray-800 mb-2">
-                    最適な言葉に変換
+                    最適置換
                   </h4>
                   <p class="text-sm text-gray-600">
-                    一番お得な表現に変えて完成！
+                    最もトークン効率の良い表現に自動変換
                   </p>
                 </div>
               </div>
@@ -207,12 +207,12 @@ export default function Home() {
 
             <div class="mt-8 p-6 bg-gray-50 rounded-lg">
               <h3 class="text-lg font-semibold text-gray-800 mb-3">
-                実際にこんなに節約できます
+                最適化効果の実例
               </h3>
               <div class="grid md:grid-cols-2 gap-6">
                 <div>
                   <h4 class="font-medium text-gray-700 mb-2">
-                    変換前（21トークン）💸
+                    最適化前（21トークン）
                   </h4>
                   <p class="text-gray-600 bg-white p-3 rounded border">
                     「コンピュータとアルゴリズムを活用したデータベースシステム」
@@ -220,7 +220,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h4 class="font-medium text-gray-700 mb-2">
-                    変換後（19トークン）💰
+                    最適化後（19トークン）
                   </h4>
                   <p class="text-gray-600 bg-white p-3 rounded border">
                     「電算機とアルゴリズムを使用したデータベースシステム」
@@ -228,15 +228,15 @@ export default function Home() {
                 </div>
               </div>
               <p class="text-sm text-gray-600 mt-3 text-center">
-                <strong>約10%も安くなりました！</strong>{" "}
-                → ChatGPTをたくさん使う人ほど節約効果大
+                <strong>約10%のトークン削減</strong>{" "}
+                → 短文での効果例（長文では数%程度の改善）
               </p>
             </div>
 
             <div class="mt-6 text-center">
               <p class="text-sm text-gray-500">
-                ChatGPTやClaude、Geminiを仕事で使っている方、毎月の料金が気になる方におすすめです。<br />
-                同じ意味なのに安く使えるなんて、なんだかお得な気分になりませんか？
+                ChatGPT、Claude、GeminiなどのAIサービスを業務で活用される企業・個人の方に最適です。<br />
+                大量のテキスト処理におけるAPI利用コストの最適化を実現します。
               </p>
             </div>
           </div>
