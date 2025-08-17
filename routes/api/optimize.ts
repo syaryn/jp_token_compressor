@@ -2,7 +2,6 @@ import { Handler } from "$fresh/server.ts";
 import { tokenize } from "wakachigaki";
 import { getEncoding } from "js-tiktoken";
 import {
-  getKvStats,
   getSynonym,
   isDictionaryInitialized,
   wordExistsInDictionary,
@@ -10,6 +9,9 @@ import {
 
 // GPT-4oエンコーダーを初期化
 const encoder = getEncoding("o200k_base");
+
+// 辞書初期化状態をキャッシュ
+let isDictionaryChecked = false;
 
 // 実際のトークン数を計測
 function getTokenCount(text: string): number {
@@ -43,8 +45,13 @@ async function optimizeCompoundWord(word: string): Promise<string> {
   return word;
 }
 
-// KV辞書の初期化チェック
+// KV辞書の初期化チェック（軽量版、キャッシュ付き）
 async function checkKvDictionary(): Promise<void> {
+  // 既にチェック済みの場合はスキップ
+  if (isDictionaryChecked) {
+    return;
+  }
+
   const isInitialized = await isDictionaryInitialized();
 
   if (!isInitialized) {
@@ -54,10 +61,8 @@ async function checkKvDictionary(): Promise<void> {
     );
   }
 
-  const stats = await getKvStats();
-  console.log(
-    `✅ KV辞書読み込み完了: ${stats.synonymCount}個の同義語, ${stats.dictionaryWordCount}個の辞書単語`,
-  );
+  isDictionaryChecked = true;
+  console.log("✅ KV辞書初期化済み");
 }
 
 async function optimizeText(text: string): Promise<string> {
