@@ -178,15 +178,19 @@ async function main() {
 
     console.log("⚡ トークン効率最適化マッピングを構築中...");
 
-    let processedLines = 0;
     const lines = data.trim().split("\n");
+    const groupMap = new Map<string, string[]>();
+
+    // まずグループIDごとに単語をまとめる
+    console.log("📋 同義語グループを構築中...");
+    let processedLines = 0;
 
     for (const line of lines) {
       processedLines++;
 
       if (processedLines % 10000 === 0) {
         console.log(
-          `📈 処理進捗: ${processedLines}/${lines.length} (${
+          `📈 グループ構築進捗: ${processedLines}/${lines.length} (${
             Math.round(processedLines / lines.length * 100)
           }%)`,
         );
@@ -208,21 +212,38 @@ async function main() {
 
       dictionaryWords.add(word);
 
-      // 同じグループIDの単語を同義語として処理
-      for (const otherLine of lines) {
-        if (otherLine.startsWith("#") || !otherLine.trim()) continue;
+      if (!groupMap.has(groupId)) {
+        groupMap.set(groupId, []);
+      }
+      groupMap.get(groupId)!.push(word);
+    }
 
-        const otherParts = otherLine.split("\t");
-        if (otherParts.length < 6) continue;
+    console.log(`📊 ${groupMap.size}個の同義語グループを構築`);
+    console.log("🔄 最適化マッピングを生成中...");
 
-        const [otherGroupId, otherWord] = otherParts;
+    let processedGroups = 0;
+    for (const [_groupId, words] of groupMap) {
+      processedGroups++;
 
-        if (
-          groupId === otherGroupId && word !== otherWord &&
-          isJapanese(otherWord) && shouldOptimize(word, otherWord)
-        ) {
-          synonymMap[word] = otherWord;
-          break;
+      if (processedGroups % 1000 === 0) {
+        console.log(
+          `📈 マッピング進捗: ${processedGroups}/${groupMap.size} グループ (${
+            Math.round(processedGroups / groupMap.size * 100)
+          }%)`,
+        );
+      }
+
+      // グループ内の各単語ペアについて最適化可能性をチェック
+      for (let i = 0; i < words.length; i++) {
+        for (let j = 0; j < words.length; j++) {
+          if (i === j) continue;
+
+          const original = words[i];
+          const optimized = words[j];
+
+          if (shouldOptimize(original, optimized)) {
+            synonymMap[original] = optimized;
+          }
         }
       }
     }
