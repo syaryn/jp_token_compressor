@@ -181,6 +181,18 @@ deno run -A --unstable-kv scripts/init-kv.ts --remote
 - エラー回復: 失敗時の適切なエラーハンドリング
 ```
 
+**📅 Cron設定の確認方法:**
+
+Deno Deployでデプロイ後、Cronジョブが正しく登録されているかを確認：
+
+1. [Deno Deploy Dashboard](https://dash.deno.com/)にアクセス
+2. プロジェクト → **Cron** タブを選択
+3. "Update Sudachi Dictionary" ジョブが表示されることを確認
+4. スケジュール: `0 17 * * *` (UTC 17:00 = JST 2:00 AM)
+
+**⚠️ 重要**:
+`main.ts`で`cron.ts`をimportしているため、アプリケーションの起動時にCronジョブが自動的に登録されます。
+
 ### コード品質管理
 
 このプロジェクトでは**lefthook**を使用して、Git
