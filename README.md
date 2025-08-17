@@ -53,7 +53,7 @@ git clone <repository-url>
 cd jp_token_compressor
 
 # KV辞書を初期化（初回のみ）
-deno run -A --unstable-kv scripts/init-kv-dict.ts
+deno run -A --unstable-kv scripts/init-kv.ts
 
 # 開発サーバーを起動
 deno task start
@@ -113,8 +113,14 @@ Deno.cron("Update Sudachi Dictionary", "0 17 * * *", async () => {
 # 開発サーバー起動（ホットリロード）
 deno task start
 
-# KV辞書の初期化・再構築
-deno run -A --unstable-kv scripts/init-kv-dict.ts
+# KV辞書の初期化・再構築（ローカル）
+deno run -A --unstable-kv scripts/init-kv.ts
+
+# KV辞書の初期化・再構築（リモート）
+deno run -A --unstable-kv scripts/init-kv.ts --remote
+
+# .envファイルを使用する場合
+deno run -A --unstable-kv --env-file=.env scripts/init-kv.ts --remote
 
 # 本番ビルド
 deno task build
@@ -135,18 +141,27 @@ deno task build
 # 2. Deno Deployへデプロイ
 deployctl deploy --project=your-project main.ts
 
-# 3. アクセストークンを設定
+# 3. アクセストークンとデータベースIDを設定（環境変数または.envファイル）
 export DENO_KV_ACCESS_TOKEN="your_access_token_here"
+export DENO_KV_DATABASE_ID="your_database_id_here"
+# または .envファイルに以下を記載:
+# DENO_KV_ACCESS_TOKEN=your_access_token_here
+# DENO_KV_DATABASE_ID=your_database_id_here
 
 # 4. リモートKV辞書を初期化
-deno run -A --unstable-kv scripts/init-remote-kv.ts
+deno run -A --unstable-kv scripts/init-kv.ts --remote
+# .envファイルを使用する場合:
+# deno run -A --unstable-kv --env-file=.env scripts/init-kv.ts --remote
 ```
 
-**🔐 KVアクセストークンの取得方法:**
+**🔐 KVアクセストークンとデータベースIDの取得方法:**
 
 1. [Deno Deploy Dashboard](https://dash.deno.com/)にアクセス
-2. プロジェクト → KV → "Set up access tokens for Deno CLI"
-3. 生成されたトークンを`DENO_KV_ACCESS_TOKEN`環境変数に設定
+2. プロジェクト → KV → KVデータベースを選択
+3. "Connect to this database from Deno CLI" セクションから:
+   - データベースID（URL内の UUID）を`DENO_KV_DATABASE_ID`に設定
+4. "Set up access tokens for Deno CLI" から:
+   - 生成されたトークンを`DENO_KV_ACCESS_TOKEN`に設定
 
 **✨ Deno KVによる本番環境の利点:**
 

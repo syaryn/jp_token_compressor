@@ -1,3 +1,13 @@
 [tools]
 deno = "latest"
 lefthook = "latest"
+
+[tasks]
+# KV辞書の初期化・再構築（ローカル）
+init-kv = "deno run -A --unstable-kv scripts/init-kv.ts"
+
+# KV辞書の初期化・再構築（リモート）
+init-kv-remote = "deno run -A --unstable-kv scripts/init-kv.ts --remote"
+
+# KV辞書の初期化・再構築（リモート、.envファイル使用）
+init-kv-remote-env = "deno run -A --unstable-kv --env-file=.env scripts/init-kv.ts --remote"

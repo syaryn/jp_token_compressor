@@ -38,5 +38,5 @@
     "jsxImportSource": "preact",
     "lib": ["deno.window", "deno.unstable"]
   },
-  "nodeModulesDir": true
+  "nodeModulesDir": "auto"
 }

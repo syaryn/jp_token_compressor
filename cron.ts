@@ -32,13 +32,25 @@ function isAlphabet(text: string): boolean {
 }
 
 function shouldOptimize(original: string, optimized: string): boolean {
-  if (isJapanese(original) && isAlphabet(optimized)) return false;
-  if (isAlphabet(original) && isJapanese(optimized)) return false;
+  // 英語への変換は禁止
+  if (isJapanese(original) && isAlphabet(optimized)) {
+    return false;
+  }
+
+  // アルファベットから日本語への変換も禁止
+  if (isAlphabet(original) && isJapanese(optimized)) {
+    return false;
+  }
 
   const originalTokens = getTokenCount(original);
   const optimizedTokens = getTokenCount(optimized);
 
-  if (optimizedTokens >= originalTokens) return false;
+  // トークン数が減らない場合は変換しない
+  if (optimizedTokens >= originalTokens) {
+    return false;
+  }
+
+  // 任意のトークン削減効果がある場合に変換
   return true;
 }
 
@@ -64,6 +76,7 @@ async function downloadAndBuildSynonymDict(): Promise<{
     `📄 [CRON] 辞書データサイズ: ${Math.round(text.length / 1024)}KB`,
   );
 
+  // 同義語グループをIDで管理（展開制御フラグも記録）
   const synonymGroups: {
     [id: string]: Array<{ word: string; expansionFlag: string }>;
   } = {};
@@ -73,9 +86,9 @@ async function downloadAndBuildSynonymDict(): Promise<{
     if (line.trim() && !line.startsWith("#")) {
       const parts = line.split(",");
       if (parts.length >= 9) {
-        const groupId = parts[0];
-        const expansionFlag = parts[2] || "0";
-        const word = parts[8];
+        const groupId = parts[0]; // 同義語グループのID
+        const expansionFlag = parts[2] || "0"; // 展開制御フラグ（省略時は0）
+        const word = parts[8]; // 単語（9番目の要素）
 
         if (word && word.trim()) {
           const cleanWord = word.trim();
@@ -86,38 +99,50 @@ async function downloadAndBuildSynonymDict(): Promise<{
             word: cleanWord,
             expansionFlag: expansionFlag,
           });
+          // 辞書に存在する全ての単語を記録
           dictionaryWords.add(cleanWord);
         }
       }
     }
   }
 
-  // 同義語マッピング構築
+  // 各グループで最もトークン効率の良い単語を見つけて、他の単語をマッピング
   for (const wordEntries of Object.values(synonymGroups)) {
     if (wordEntries.length > 1) {
+      // 変換先として使用可能な単語のみを対象（フラグ=2は除外）
       const validTargets = wordEntries.filter((entry) =>
         entry.expansionFlag !== "2"
       );
 
-      if (validTargets.length === 0) continue;
+      if (validTargets.length === 0) continue; // 有効な変換先がない場合はスキップ
 
+      // 実際のトークン数で最も効率的な単語を選択（日本語を優先）
       const mostEfficient = validTargets.reduce((a, b) => {
         const tokensA = getTokenCount(a.word);
         const tokensB = getTokenCount(b.word);
         const isJapaneseA = isJapanese(a.word);
         const isJapaneseB = isJapanese(b.word);
 
-        if (isJapaneseA && !isJapaneseB) return a;
-        if (!isJapaneseA && isJapaneseB) return b;
+        // 日本語を優先: 両方が日本語または両方が非日本語の場合のみトークン数で比較
+        if (isJapaneseA && !isJapaneseB) return a; // aが日本語、bが非日本語
+        if (!isJapaneseA && isJapaneseB) return b; // aが非日本語、bが日本語
 
+        // トークン数が少ない方を選択、同じ場合は文字数が少ない方
         return tokensA < tokensB ||
             (tokensA === tokensB && a.word.length < b.word.length)
           ? a
           : b;
       });
 
+      // グループ内の他の単語を最効率単語にマッピング
+      // ただし、展開制御フラグが0（常に展開）の単語のみを変換元として許可
       for (const wordEntry of wordEntries) {
         const { word, expansionFlag } = wordEntry;
+
+        // 展開制御フラグをチェック
+        // 0: 常に展開に使用する（変換元として許可）
+        // 1: 自分自身が展開のトリガーとはならない（変換元として不許可）
+        // 2: 常に展開に使用しない（変換元として不許可）
         if (
           word !== mostEfficient.word &&
           expansionFlag === "0" &&
@@ -167,7 +192,7 @@ async function shouldUpdateDictionary(): Promise<boolean> {
   }
 }
 
-async function updateDictionary(): Promise<void> {
+export async function updateDictionary(): Promise<void> {
   const startTime = Date.now();
   console.log(`🚀 [CRON] 辞書自動更新開始: ${new Date().toISOString()}`);
 
