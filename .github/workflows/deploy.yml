@@ -32,5 +32,3 @@ jobs:
           project: "syaryn-jp-token-co-37"
           entrypoint: "main.ts"
           root: "."
-          
-          
