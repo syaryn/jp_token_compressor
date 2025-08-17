@@ -4,6 +4,8 @@
  * 同義語辞書のKVストレージ管理機能
  */
 
+import { getEncoding } from "js-tiktoken";
+
 // KVインスタンスの初期化
 let kv: Deno.Kv | null = null;
 
@@ -209,4 +211,130 @@ export async function clearKvDictionary(): Promise<void> {
   await kv.delete(KV_KEYS.metadata("dictionary"));
 
   console.log("🗑️ KV辞書をクリアしました");
+}
+
+// GPT-4oエンコーダーを初期化
+const encoder = getEncoding("o200k_base");
+
+function getTokenCount(text: string): number {
+  return encoder.encode(text).length;
+}
+
+function isJapanese(text: string): boolean {
+  return /^[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\u3400-\u4DBF]+$/.test(text);
+}
+
+function isAlphabet(text: string): boolean {
+  return /^[a-zA-Z]+$/.test(text);
+}
+
+function shouldOptimize(original: string, optimized: string): boolean {
+  if (isJapanese(original) && isAlphabet(optimized)) return false;
+  if (isAlphabet(original) && isJapanese(optimized)) return false;
+
+  const originalTokens = getTokenCount(original);
+  const optimizedTokens = getTokenCount(optimized);
+
+  if (optimizedTokens >= originalTokens) return false;
+  return true;
+}
+
+/**
+ * Sudachi辞書を自動ダウンロード・構築してKVに保存
+ */
+export async function initializeDictionary(): Promise<void> {
+  console.log("🚀 辞書自動初期化を開始");
+
+  try {
+    const synonymMap: Record<string, string> = {};
+    const dictionaryWords = new Set<string>();
+
+    console.log("📥 Sudachi同義語辞書をダウンロード中...");
+    const response = await fetch(
+      "https://raw.githubusercontent.com/WorksApplications/SudachiDict/refs/heads/develop/src/main/text/synonyms.txt",
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const text = await response.text();
+    console.log(`📄 辞書データサイズ: ${Math.round(text.length / 1024)}KB`);
+
+    const synonymGroups: {
+      [id: string]: Array<{ word: string; expansionFlag: string }>;
+    } = {};
+
+    const lines = text.split("\n");
+    for (const line of lines) {
+      if (line.trim() && !line.startsWith("#")) {
+        const parts = line.split(",");
+        if (parts.length >= 9) {
+          const groupId = parts[0];
+          const expansionFlag = parts[2] || "0";
+          const word = parts[8];
+
+          if (word && word.trim()) {
+            const cleanWord = word.trim();
+            if (!synonymGroups[groupId]) {
+              synonymGroups[groupId] = [];
+            }
+            synonymGroups[groupId].push({
+              word: cleanWord,
+              expansionFlag: expansionFlag,
+            });
+            dictionaryWords.add(cleanWord);
+          }
+        }
+      }
+    }
+
+    console.log("⚡ トークン効率最適化マッピングを構築中...");
+
+    for (const wordEntries of Object.values(synonymGroups)) {
+      if (wordEntries.length > 1) {
+        const validTargets = wordEntries.filter((entry) =>
+          entry.expansionFlag !== "2"
+        );
+
+        if (validTargets.length === 0) continue;
+
+        const mostEfficient = validTargets.reduce((a, b) => {
+          const tokensA = getTokenCount(a.word);
+          const tokensB = getTokenCount(b.word);
+          const isJapaneseA = isJapanese(a.word);
+          const isJapaneseB = isJapanese(b.word);
+
+          if (isJapaneseA && !isJapaneseB) return a;
+          if (!isJapaneseA && isJapaneseB) return b;
+
+          return tokensA < tokensB ||
+              (tokensA === tokensB && a.word.length < b.word.length)
+            ? a
+            : b;
+        });
+
+        for (const wordEntry of wordEntries) {
+          const { word, expansionFlag } = wordEntry;
+          if (
+            word !== mostEfficient.word &&
+            expansionFlag === "0" &&
+            shouldOptimize(word, mostEfficient.word)
+          ) {
+            synonymMap[word] = mostEfficient.word;
+          }
+        }
+      }
+    }
+
+    console.log(
+      `💾 KVに保存中: ${Object.keys(synonymMap).length}個の同義語マッピング`,
+    );
+    await saveSynonymsBatch(synonymMap, Array.from(dictionaryWords));
+
+    console.log("✅ 辞書自動初期化が完了しました");
+  } catch (error) {
+    console.error("💥 辞書自動初期化に失敗:", error);
+    throw error;
+  }
 }

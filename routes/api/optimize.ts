@@ -4,6 +4,7 @@ import { getEncoding } from "js-tiktoken";
 import {
   getKvStats,
   getSynonym,
+  initializeDictionary,
   isDictionaryInitialized,
   wordExistsInDictionary,
 } from "../../utils/kv.ts";
@@ -43,17 +44,23 @@ async function optimizeCompoundWord(word: string): Promise<string> {
   return word;
 }
 
-// KV辞書の初期化チェック（必要に応じてエラーメッセージ表示）
+// KV辞書の初期化チェック（必要に応じて自動初期化）
 async function checkKvDictionary(): Promise<void> {
   const isInitialized = await isDictionaryInitialized();
 
   if (!isInitialized) {
-    console.warn("⚠️ KV辞書が初期化されていません");
-    console.warn("📝 以下のコマンドで辞書を初期化してください:");
-    console.warn("   deno run -A scripts/init-kv-dict.ts");
-    throw new Error(
-      "辞書が初期化されていません。init-kv-dict.tsを実行してください。",
-    );
+    console.log("⚠️ KV辞書が初期化されていません - 自動初期化を開始");
+
+    try {
+      // 自動初期化を実行
+      await initializeDictionary();
+      console.log("✅ KV辞書の自動初期化が完了しました");
+    } catch (error) {
+      console.error("❌ KV辞書の自動初期化に失敗:", error);
+      throw new Error(
+        "辞書の初期化に失敗しました。管理者にお問い合わせください。",
+      );
+    }
   }
 
   const stats = await getKvStats();
