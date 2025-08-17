@@ -205,13 +205,6 @@ async function main() {
       const groupId = parts[0];
       const word = parts[8]; // 9番目の要素が単語
 
-      // デバッグ用：最初の10行を表示
-      if (validWords < 10) {
-        console.log(
-          `デバッグ: グループ${groupId}, 単語: "${word}", パーツ数: ${parts.length}`,
-        );
-      }
-
       // 展開制御フラグが2（弊害語）の場合はスキップ
       if (parts.length >= 7 && parts[6] === "2") {
         continue;
