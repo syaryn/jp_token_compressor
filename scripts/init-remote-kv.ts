@@ -120,6 +120,7 @@ async function saveSynonymsBatch(
   // メタデータを保存
   await kv.set(["dictionary", "initialized"], true);
   await kv.set(["dictionary", "word_count"], dictionaryWords.length);
+  await kv.set(["dictionary", "synonym_count"], Object.keys(synonymMap).length);
   await kv.set(["dictionary", "last_updated"], new Date().toISOString());
 
   console.log("✅ 辞書データの保存が完了しました");

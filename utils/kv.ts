@@ -158,18 +158,12 @@ export async function getKvStats(): Promise<{
 
   // リモート初期化スクリプトと互換性のあるキーから統計情報を取得
   const wordCountResult = await kv.get(["dictionary", "word_count"]);
+  const synonymCountResult = await kv.get(["dictionary", "synonym_count"]);
   const lastUpdatedResult = await kv.get(["dictionary", "last_updated"]);
 
-  if (wordCountResult.value) {
-    // 同義語数を実際にカウント
-    let synonymCount = 0;
-    const synonymsIter = kv.list({ prefix: ["synonyms"] });
-    for await (const _entry of synonymsIter) {
-      synonymCount++;
-    }
-
+  if (wordCountResult.value && synonymCountResult.value) {
     return {
-      synonymCount,
+      synonymCount: synonymCountResult.value as number,
       dictionaryWordCount: wordCountResult.value as number,
       lastUpdated: lastUpdatedResult.value as string,
     };
