@@ -1,3 +1,4 @@
+/// <reference lib="deno.unstable" />
 /**
  * Deno KV用ユーティリティ関数
  * 同義語辞書のKVストレージ管理機能

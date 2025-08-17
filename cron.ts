@@ -1,3 +1,4 @@
+/// <reference lib="deno.unstable" />
 /**
  * Deno Cron定義ファイル
  * 辞書の自動更新スケジュール
