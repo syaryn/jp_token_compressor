@@ -8,13 +8,6 @@ export default function Home() {
           <h1 class="text-4xl font-bold text-gray-900 mb-2">
             日本語トークン効率最適化ツール
           </h1>
-          <p class="text-lg text-gray-600">
-            Sudachi同義語辞書を使用して、読みやすさを保ちながら日本語表現を最適化します
-          </p>
-          <div class="mt-4 text-sm text-gray-500">
-            ✅ 日本語のみ最適化 ✅ トークン削減効果のある変換を適用 ✅
-            可読性を重視
-          </div>
         </div>
 
         <div class="grid md:grid-cols-2 gap-6">
@@ -130,6 +123,124 @@ export default function Home() {
         </div>
 
         <TextOptimizer />
+
+        {/* 仕組み説明セクション */}
+        <div class="mt-16 bg-white rounded-lg shadow-lg p-8">
+          <div class="max-w-4xl mx-auto">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6 text-center">
+              どうやってトークン数を減らしているの？
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+              <div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">
+                  💰 ChatGPTのお金、節約できます！
+                </h3>
+                <p class="text-gray-600 leading-relaxed mb-4">
+                  ChatGPTやClaude、Geminiって使うたびにお金がかかりますよね。実は<strong>
+                    文字数じゃなくて「トークン数」
+                  </strong>で料金が決まるんです。このツールを使うと同じ意味のまま、もっと安く使えるようになります！
+                </p>
+                <ul class="text-sm text-gray-600 space-y-1">
+                  <li>• 平均10-20%お得になります</li>
+                  <li>• 意味や読みやすさはそのまま</li>
+                  <li>• 長い文章ほど効果大</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">
+                  📚 すごい日本語辞書を使ってます
+                </h3>
+                <p class="text-gray-600 leading-relaxed mb-4">
+                  「Sudachi同義語辞書」という、日本語のプロが作った辞書を使っています。<strong>
+                    64,747個の単語
+                  </strong>と<strong>
+                    15,085個の言い換え
+                  </strong>が入っていて、毎日最新版に更新されています。
+                </p>
+                <ul class="text-sm text-gray-600 space-y-1">
+                  <li>• プロ品質の日本語処理</li>
+                  <li>• 毎日自動で最新版に更新</li>
+                  <li>• 日本語に特化した最適化</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="border-t pt-8">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center">
+                こんな感じで最適化してます
+              </h3>
+              <div class="grid md:grid-cols-4 gap-4 text-center">
+                <div class="p-4 bg-blue-50 rounded-lg">
+                  <div class="text-2xl font-bold text-blue-600 mb-2">1</div>
+                  <h4 class="font-medium text-gray-800 mb-2">文章を分解</h4>
+                  <p class="text-sm text-gray-600">
+                    日本語を単語ごとに分けます
+                  </p>
+                </div>
+                <div class="p-4 bg-green-50 rounded-lg">
+                  <div class="text-2xl font-bold text-green-600 mb-2">2</div>
+                  <h4 class="font-medium text-gray-800 mb-2">言い換え探し</h4>
+                  <p class="text-sm text-gray-600">
+                    辞書から同じ意味の別の言葉を探します
+                  </p>
+                </div>
+                <div class="p-4 bg-yellow-50 rounded-lg">
+                  <div class="text-2xl font-bold text-yellow-600 mb-2">3</div>
+                  <h4 class="font-medium text-gray-800 mb-2">お得度チェック</h4>
+                  <p class="text-sm text-gray-600">
+                    どっちがトークン数少ないか計算
+                  </p>
+                </div>
+                <div class="p-4 bg-purple-50 rounded-lg">
+                  <div class="text-2xl font-bold text-purple-600 mb-2">4</div>
+                  <h4 class="font-medium text-gray-800 mb-2">
+                    最適な言葉に変換
+                  </h4>
+                  <p class="text-sm text-gray-600">
+                    一番お得な表現に変えて完成！
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8 p-6 bg-gray-50 rounded-lg">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">
+                実際にこんなに節約できます
+              </h3>
+              <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 class="font-medium text-gray-700 mb-2">
+                    変換前（21トークン）💸
+                  </h4>
+                  <p class="text-gray-600 bg-white p-3 rounded border">
+                    「コンピュータとアルゴリズムを活用したデータベースシステム」
+                  </p>
+                </div>
+                <div>
+                  <h4 class="font-medium text-gray-700 mb-2">
+                    変換後（19トークン）💰
+                  </h4>
+                  <p class="text-gray-600 bg-white p-3 rounded border">
+                    「電算機とアルゴリズムを使用したデータベースシステム」
+                  </p>
+                </div>
+              </div>
+              <p class="text-sm text-gray-600 mt-3 text-center">
+                <strong>約10%も安くなりました！</strong>{" "}
+                → ChatGPTをたくさん使う人ほど節約効果大
+              </p>
+            </div>
+
+            <div class="mt-6 text-center">
+              <p class="text-sm text-gray-500">
+                ChatGPTやClaude、Geminiを仕事で使っている方、毎月の料金が気になる方におすすめです。<br />
+                同じ意味なのに安く使えるなんて、なんだかお得な気分になりませんか？
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
