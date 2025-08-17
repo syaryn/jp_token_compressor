@@ -184,6 +184,7 @@ async function main() {
     // まずグループIDごとに単語をまとめる
     console.log("📋 同義語グループを構築中...");
     let processedLines = 0;
+    let validWords = 0;
 
     for (const line of lines) {
       processedLines++;
@@ -192,16 +193,24 @@ async function main() {
         console.log(
           `📈 グループ構築進捗: ${processedLines}/${lines.length} (${
             Math.round(processedLines / lines.length * 100)
-          }%)`,
+          }%) - 有効単語: ${validWords}`,
         );
       }
 
       if (line.startsWith("#") || !line.trim()) continue;
 
-      const parts = line.split("\t");
-      if (parts.length < 6) continue;
+      const parts = line.split(",");
+      if (parts.length < 9) continue;
 
-      const [groupId, word] = parts;
+      const groupId = parts[0];
+      const word = parts[8]; // 9番目の要素が単語
+
+      // デバッグ用：最初の10行を表示
+      if (validWords < 10) {
+        console.log(
+          `デバッグ: グループ${groupId}, 単語: "${word}", パーツ数: ${parts.length}`,
+        );
+      }
 
       // 展開制御フラグが2（弊害語）の場合はスキップ
       if (parts.length >= 7 && parts[6] === "2") {
@@ -210,6 +219,7 @@ async function main() {
 
       if (!word || !isJapanese(word)) continue;
 
+      validWords++;
       dictionaryWords.add(word);
 
       if (!groupMap.has(groupId)) {
