@@ -135,10 +135,18 @@ deno task build
 # 2. Deno Deployへデプロイ
 deployctl deploy --project=your-project main.ts
 
-# 3. デプロイ後にKV辞書を初期化
-# Deno Deploy上で以下のスクリプトを実行
-deno run -A --unstable-kv scripts/init-kv-dict.ts
+# 3. アクセストークンを設定
+export DENO_KV_ACCESS_TOKEN="your_access_token_here"
+
+# 4. リモートKV辞書を初期化
+deno run -A --unstable-kv scripts/init-remote-kv.ts
 ```
+
+**🔐 KVアクセストークンの取得方法:**
+
+1. [Deno Deploy Dashboard](https://dash.deno.com/)にアクセス
+2. プロジェクト → KV → "Set up access tokens for Deno CLI"
+3. 生成されたトークンを`DENO_KV_ACCESS_TOKEN`環境変数に設定
 
 **✨ Deno KVによる本番環境の利点:**
 
